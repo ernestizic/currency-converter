@@ -9,11 +9,14 @@ function App() {
   useEffect(()=> {
   // Get supported symbols that can be converted
     (async()=> {
-      const res = await axios.get('https://api.exchangerate.host/symbols')
-      const data = res.data.symbols
-      let objectValues = Object.values(data)
-      setCurrencySymbols(objectValues)
-      console.log(objectValues)
+      try {
+        const res = await axios.get('https://api.exchangerate.host/symbols')
+        const data = res.data.symbols
+        let objectValues = Object.values(data)
+        setCurrencySymbols(objectValues)
+      } catch (err) {
+        console.log(err)
+      }
     })()
   }, [])
 

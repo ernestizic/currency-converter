@@ -1,26 +1,19 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
-import {
-	MenuItem,
-	Select,
-	TextField,
-	FormControl,
-	InputLabel,
-	FormHelperText,
-	Button,
-} from '@mui/material';
+import { MenuItem, TextField, Button } from '@mui/material';
 import axios from 'axios';
 
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
-const ConverterForm = ({ currencySymbols }) => {
+const ConverterForm = ({ currencySymbols, isLoading }) => {
 	const [result, setResult] = useState('');
+	const [apiError, setApiError] = useState('');
 
 	const formik = useFormik({
 		initialValues: {
-			convertFrom: '',
+			convertFrom: 'AUD',
 			convertTo: '',
 			amount: '',
 		},
@@ -40,80 +33,87 @@ const ConverterForm = ({ currencySymbols }) => {
 
 	// Function to perform conversion
 	const performConversion = async (values) => {
-		const res = await axios.get(
-			`https://api.exchangerate.host/convert?from=${values.convertFrom}&to=${values.convertTo}&amount=${values.amount}`
-		);
-		setResult(res.data.result);
+		try {
+			const res = await axios.get(
+				`https://api.exchangerate.host/convert?from=${values.convertFrom}&to=${values.convertTo}&amount=${values.amount}`
+			);
+			setResult(res.data.result);
+		} catch (err) {
+			setApiError(err.message);
+		}
 	};
 
 	return (
 		<form onSubmit={formik.handleSubmit}>
-			{/* Convert From */}
-			<FormControl
-				// required
+			{/* CONVERT FROM */}
+			<TextField
+				id='convert-from-select'
+				label='Convert from'
+				select
 				sx={{ m: '20px 0', minWidth: '45%', float: 'left' }}
 				color='secondary'
-				error={formik.errors.convertFrom && formik.touched.convertFrom && true}
+				error={
+					formik.errors.convertFrom && formik.touched.convertFrom ? true : false
+				}
+				helperText={
+					formik.errors.convertFrom &&
+					formik.touched.convertFrom &&
+					formik.errors.convertFrom
+				}
+				name='convertFrom'
+				value={formik.values.convertFrom}
+				onChange={formik.handleChange}
+				onBlur={formik.handleBlur}
 			>
-				{/* <InputLabel id='select-label'>Convert From</InputLabel> */}
-				<Select
-					labelId='select-label'
-					id='demo-simple-select-required'
-					name='convertFrom'
-					value={formik.values.convertFrom}
-					onChange={formik.handleChange}
-					onBlur={formik.handleBlur}
-					// label='Convert from *'
-					displayEmpty
-					inputProps={{ 'aria-label': 'Without label' }}
-				>
+				{isLoading ? (
 					<MenuItem value=''>
-						<em>AUD</em>
+						<em>Loading list...</em>
 					</MenuItem>
-					{currencySymbols?.map((data, idx) => (
+				) : (
+					currencySymbols?.map((data, idx) => (
 						<MenuItem value={data.code} key={idx}>
 							{data.code}
 						</MenuItem>
-					))}
-				</Select>
-				{formik.errors.convertFrom && formik.touched.convertFrom && (
-					<FormHelperText>{formik.errors.convertFrom}</FormHelperText>
+					))
 				)}
-			</FormControl>
+			</TextField>
 
-			{/* Convert to */}
-			<FormControl
+			{/* CONVERT TO */}
+			<TextField
+				id='convert-to-select'
+				label='Convert to'
+				select
 				sx={{ m: '20px 0', minWidth: '45%', float: 'right' }}
 				color='secondary'
-				error={formik.errors.convertTo && formik.touched.convertTo && true}
+				error={
+					formik.errors.convertTo && formik.touched.convertTo ? true : false
+				}
+				helperText={
+					formik.errors.convertTo &&
+					formik.touched.convertTo &&
+					formik.errors.convertTo
+				}
+				name='convertTo'
+				value={formik.values.convertTo}
+				onChange={formik.handleChange}
+				onBlur={formik.handleBlur}
 			>
-				<InputLabel id='select-convert-to-label'>Convert To</InputLabel>
-				<Select
-					labelId='select-convert-to-label'
-					id='convert-to'
-					name='convertTo'
-					label='Convert from *'
-					value={formik.values.convertTo}
-					onChange={formik.handleChange}
-					onBlur={formik.handleBlur}
-				>
+				{isLoading ? (
 					<MenuItem value=''>
-						<em>None</em>
+						<em>Loading list...</em>
 					</MenuItem>
-					{currencySymbols?.map((data, idx) => (
+				) : (
+					currencySymbols?.map((data, idx) => (
 						<MenuItem value={data.code} key={idx}>
 							{data.code}
 						</MenuItem>
-					))}
-				</Select>
-				{formik.errors.convertTo && formik.touched.convertTo && (
-					<FormHelperText>{formik.errors.convertTo}</FormHelperText>
+					))
 				)}
-			</FormControl>
+			</TextField>
 
 			{/* Amount input field */}
 			<TextField
-				id='outlined-basic'
+				id='amount'
 				label='Amount'
 				name='amount'
 				variant='outlined'
@@ -134,16 +134,18 @@ const ConverterForm = ({ currencySymbols }) => {
 				sx={{ width: '100%', margin: '20px 0' }}
 				size='large'
 				color='secondary'
+				disabled={!(formik.isValid && formik.dirty)}
 			>
 				Get Exchange Rate
 			</Button>
 
 			{result && (
-				<p className='result'>
+				<p className='result' data-testid="result">
 					{formik.values.amount} {formik.values.convertFrom} = {result}{' '}
 					{formik.values.convertTo}
 				</p>
 			)}
+			{apiError && <span className='apiErr'>{apiError}</span>}
 		</form>
 	);
 };
